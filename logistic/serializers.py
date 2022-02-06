@@ -49,8 +49,12 @@ class StockSerializer(serializers.ModelSerializer):
 
         for position_data in positions_data:
             obj, created = StockProduct.objects.filter(stock_id=stock.id).update_or_create(
-                **position_data,
-                stock_id=stock.id
+                stock_id=stock.id,
+                product_id=position_data['product'],
+                defaults={
+                    'quantity': position_data['quantity'],
+                    'price': position_data['price']
+                }
             )
 
         return stock
