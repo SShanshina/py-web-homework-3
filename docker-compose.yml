@@ -1,0 +1,58 @@
+version: '2.6'
+
+networks:
+  backend:
+
+services:
+  nginx:
+    depends_on:
+      - backend
+    image: nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./static:/static
+    networks:
+      - backend
+
+  backend:
+    depends_on:
+      - database
+      - migration
+    image: stocks_products
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - 3000:3000
+    networks:
+      - backend
+
+  database:
+    image: postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migration:
+    image: stocks_products
+    build: .
+    command: python manage.py migrate --noinput
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - backend
+
+volumes:
+  postgres:
